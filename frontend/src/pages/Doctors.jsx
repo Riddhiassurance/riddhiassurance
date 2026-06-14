@@ -14,7 +14,11 @@ const Doctors = () => {
 
   const applyFilter = () => {
     if (speciality) {
-      setFilterDoc(doctors.filter(doc => doc.speciality === speciality))
+      if (speciality === 'Health & Life Insurance Advisor') {
+        setFilterDoc(doctors)
+      } else {
+        setFilterDoc(doctors.filter(doc => doc.speciality === speciality))
+      }
     } else {
       setFilterDoc(doctors)
     }

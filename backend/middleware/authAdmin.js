@@ -1,21 +1,48 @@
-import jwt from "jsonwebtoken"
+import jwtService from '../services/jwtService.js';
+import bcrypt from 'bcrypt';
 
-// admin authentication middleware
+let adminPasswordHash = null;
+
+export const getAdminHash = async () => {
+    if (!adminPasswordHash && process.env.ADMIN_PASSWORD) {
+        adminPasswordHash = await bcrypt.hash(process.env.ADMIN_PASSWORD, 12);
+    }
+    return adminPasswordHash;
+};
+
+export const verifyAdminPassword = async (password) => {
+    const hash = await getAdminHash();
+    if (!hash) return false;
+    return bcrypt.compare(password, hash);
+};
+
+export const clearAdminHash = () => {
+    adminPasswordHash = null;
+};
+
 const authAdmin = async (req, res, next) => {
     try {
-        const { atoken } = req.headers
+        const authHeader = req.headers.authorization;
+        const atoken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : req.headers.atoken;
+
         if (!atoken) {
-            return res.json({ success: false, message: 'Not Authorized Login Again' })
+            return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
         }
-        const token_decode = jwt.verify(atoken, process.env.JWT_SECRET)
-        if (token_decode !== process.env.ADMIN_EMAIL + process.env.ADMIN_PASSWORD) {
-            return res.json({ success: false, message: 'Not Authorized Login Again' })
+
+        const decoded = jwtService.verifyAdminToken(atoken);
+        if (!decoded) {
+            return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
         }
-        next()
+
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Admin access required' });
+        }
+
+        req.user = { userId: decoded.userId, email: decoded.email, role: decoded.role };
+        next();
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
     }
-}
+};
 
 export default authAdmin;

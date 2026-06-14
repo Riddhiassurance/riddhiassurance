@@ -17,7 +17,7 @@ const Footer = () => {
       <div className='relative z-10 md:mx-10 px-6 sm:px-10 lg:px-14 py-16'>
 
         {/* Main Footer */}
-        <div className='grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-14'>
+        <div className='grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-14 items-start'>
 
           {/* Left Section */}
           <div>
@@ -43,38 +43,8 @@ const Footer = () => {
           </div>
 
 
-          {/* Company Section */}
-          <div>
-
-            <h2 className='text-2xl font-semibold mb-6 text-cyan-300'>
-              COMPANY
-            </h2>
-
-            <ul className='flex flex-col gap-4 text-gray-300 text-sm'>
-
-              <li className='hover:text-cyan-300 transition-all duration-300 cursor-pointer'>
-                (Phone 1)
-              </li>
-
-              <li className='hover:text-cyan-300 transition-all duration-300 cursor-pointer'>
-                (Phone 2)
-              </li>
-
-              <li className='hover:text-cyan-300 transition-all duration-300 cursor-pointer'>
-                Service Email
-              </li>
-
-              <li className='hover:text-cyan-300 transition-all duration-300 cursor-pointer'>
-                Office Address
-              </li>
-
-            </ul>
-
-          </div>
-
-
           {/* Contact Section */}
-          <div>
+          <div className='md:justify-self-center'>
 
             <h2 className='text-2xl font-semibold mb-6 text-cyan-300'>
               GET IN TOUCH
@@ -101,20 +71,28 @@ const Footer = () => {
 
             </ul>
 
+            <div className='mt-6'>
+              <iframe
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3651.5!2d88.3639!3d23.2167!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f8b0!2sKalna!5e0!3m2!1sen!2sin!4v1"
+                width="100%"
+                height="200"
+                style={{ border: 0, borderRadius: '8px' }}
+                allowFullScreen
+                loading="lazy"
+                title="Office Location"
+              />
+            </div>
+
           </div>
 
         </div>
 
 
         {/* Bottom Footer */}
-        <div className='mt-14 border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-between gap-4'>
+        <div className='mt-14 border-t border-white/10 pt-6 flex flex-col md:flex-row items-center justify-center gap-4'>
 
-          <p className='text-sm text-gray-400 text-center md:text-left'>
+          <p className='text-sm text-gray-400 text-center'>
             © 2026 Riddhi Assurance. All Rights Reserved.
-          </p>
-
-          <p className='text-sm text-cyan-300 font-medium'>
-            Developed by Pratip Mitra 🚀
           </p>
 
         </div>

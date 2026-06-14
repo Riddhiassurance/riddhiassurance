@@ -3,14 +3,29 @@ import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
 import { assets } from '../assets/assets'
+import apiClient from '../services/api'
+import PositionAwareButton from '../components/ui/PositionAwareButton'
 
 const MyProfile = () => {
 
     const [isEdit, setIsEdit] = useState(false)
 
     const [image, setImage] = useState(false)
+    const [passwords, setPasswords] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' })
 
     const { token, backendUrl, userData, setUserData, loadUserProfileData } = useContext(AppContext)
+
+    const changePassword = async () => {
+      try {
+        const { data } = await apiClient.post('/auth/change-password', passwords)
+        if (data.success) {
+          toast.success(data.message)
+          setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' })
+        }
+      } catch (error) {
+        toast.error(error.response?.data?.message || 'Password change failed')
+      }
+    }
 
     // Function to update user profile data using API
     const updateUserProfileData = async () => {
@@ -19,11 +34,11 @@ const MyProfile = () => {
 
             const formData = new FormData();
 
-            formData.append('name', userData.name)
-            formData.append('phone', userData.phone)
-            formData.append('address', JSON.stringify(userData.address))
-            formData.append('gender', userData.gender)
-            formData.append('dob', userData.dob)
+            if (userData.name) formData.append('name', userData.name)
+            if (userData.phone) formData.append('phone', userData.phone)
+            if (userData.address) formData.append('address', JSON.stringify(userData.address))
+            if (userData.gender) formData.append('gender', userData.gender)
+            if (userData.dob) formData.append('dob', userData.dob)
 
             image && formData.append('image', image)
 
@@ -82,10 +97,10 @@ const MyProfile = () => {
 
                     {isEdit
                         ? <p>
-                            <input className='bg-gray-50' type="text" onChange={(e) => setUserData(prev => ({ ...prev, address: { ...prev.address, line1: e.target.value } }))} value={userData.address.line1} />
+                            <input className='bg-gray-50' type="text" onChange={(e) => setUserData(prev => ({ ...prev, address: { ...prev.address, line1: e.target.value } }))} value={userData.address?.line1 || ''} />
                             <br />
-                            <input className='bg-gray-50' type="text" onChange={(e) => setUserData(prev => ({ ...prev, address: { ...prev.address, line2: e.target.value } }))} value={userData.address.line2} /></p>
-                        : <p className='text-gray-500'>{userData.address.line1} <br /> {userData.address.line2}</p>
+                            <input className='bg-gray-50' type="text" onChange={(e) => setUserData(prev => ({ ...prev, address: { ...prev.address, line2: e.target.value } }))} value={userData.address?.line2 || ''} /></p>
+                        : <p className='text-gray-500'>{userData.address?.line1 || ''} <br /> {userData.address?.line2 || ''}</p>
                     }
 
                 </div>
@@ -97,18 +112,18 @@ const MyProfile = () => {
 
                     {isEdit
                         ? <select className='max-w-20 bg-gray-50' onChange={(e) => setUserData(prev => ({ ...prev, gender: e.target.value }))} value={userData.gender} >
-                            <option value="Not Selected">Not Selected</option>
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
+                            <option value="prefer_not_to_say">Not Selected</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
                         </select>
-                        : <p className='text-gray-500'>{userData.gender}</p>
+                        : <p className='text-gray-500'>{userData.gender === 'male' ? 'Male' : userData.gender === 'female' ? 'Female' : userData.gender === 'prefer_not_to_say' ? 'Not Selected' : userData.gender}</p>
                     }
 
                     <p className='font-medium'>Birthday:</p>
 
                     {isEdit
-                        ? <input className='max-w-28 bg-gray-50' type='date' onChange={(e) => setUserData(prev => ({ ...prev, dob: e.target.value }))} value={userData.dob} />
-                        : <p className='text-gray-500'>{userData.dob}</p>
+                        ? <input className='max-w-28 bg-gray-50' type='date' onChange={(e) => setUserData(prev => ({ ...prev, dob: e.target.value }))} value={userData.dob ? userData.dob.split('T')[0] : ''} />
+                        : <p className='text-gray-500'>{userData.dob ? new Date(userData.dob).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Not set'}</p>
                     }
 
                 </div>
@@ -120,6 +135,24 @@ const MyProfile = () => {
                     : <button onClick={() => setIsEdit(true)} className='border border-primary px-8 py-2 rounded-full hover:bg-primary hover:text-white transition-all'>Edit</button>
                 }
 
+            </div>
+
+            <hr className='bg-[#ADADAD] h-[1px] border-none mt-10' />
+
+            <div className='mt-6'>
+              <p className='text-gray-600 underline mt-3'>CHANGE PASSWORD</p>
+              <div className='mt-4 space-y-3 max-w-sm'>
+                <input type="password" placeholder="Current password" value={passwords.currentPassword}
+                  onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                <input type="password" placeholder="New password" value={passwords.newPassword}
+                  onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                <input type="password" placeholder="Confirm password" value={passwords.confirmPassword}
+                  onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
+                  className="w-full rounded-md border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary" />
+                <PositionAwareButton onClick={changePassword}>Change Password</PositionAwareButton>
+              </div>
             </div>
         </div>
     ) : null

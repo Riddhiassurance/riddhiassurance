@@ -6,7 +6,7 @@ import { AppContext } from '../../context/AppContext'
 
 const Dashboard = () => {
 
-  const { aToken, getDashData, cancelAppointment, dashData } = useContext(AdminContext)
+  const { aToken, getDashData, getAllAppointments, cancelAppointment, dashData } = useContext(AdminContext)
   const { slotDateFormat } = useContext(AppContext)
   const navigate = useNavigate()
 
@@ -16,7 +16,16 @@ const Dashboard = () => {
     }
   }, [aToken])
 
-  return dashData && (
+  if (!dashData) return (
+    <div className="m-5">
+      <div className="h-8 w-48 animate-pulse rounded bg-gray-200 mb-6" />
+      <div className="flex flex-wrap gap-3">
+        {[1,2,3].map(i => <div key={i} className="h-24 w-52 animate-pulse rounded bg-gray-200" />)}
+      </div>
+    </div>
+  )
+
+  return (
     <div className='m-5'>
 
       <div className='flex flex-wrap gap-3'>
@@ -55,7 +64,7 @@ const Dashboard = () => {
         </div>
 
         <div className='pt-4 border border-t-0'>
-          {dashData.latestAppointments.slice(0, 5).map((item, index) => (
+          {(dashData.latestAppointments || []).slice(0, 5).map((item, index) => (
             <div className='flex items-center px-6 py-3 gap-3 hover:bg-gray-100' key={index}>
               <img className='rounded-full w-10' src={item.docData.image} alt="" />
               <div className='flex-1 text-sm'>
@@ -66,7 +75,7 @@ const Dashboard = () => {
                 ? <p className='text-red-400 text-xs font-medium'>Cancelled</p>
                 : item.isCompleted
                   ? <p className='text-green-500 text-xs font-medium'>Completed</p>
-                  : <img onClick={() => cancelAppointment(item._id)} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
+                  : <img onClick={async () => { await cancelAppointment(item._id); getDashData() }} className='w-10 cursor-pointer' src={assets.cancel_icon} alt="" />
               }
             </div>
           ))}

@@ -9,15 +9,11 @@ const AddDoctor = () => {
 
     const [docImg, setDocImg] = useState(false)
     const [name, setName] = useState('')
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
     const [experience, setExperience] = useState('1 Year')
     const [fees, setFees] = useState('')
     const [about, setAbout] = useState('')
-    const [speciality, setSpeciality] = useState('General physician')
-    const [degree, setDegree] = useState('')
-    const [address1, setAddress1] = useState('')
-    const [address2, setAddress2] = useState('')
+    const [speciality, setSpeciality] = useState('Star Health Insurance')
+
 
     const { backendUrl } = useContext(AppContext)
     const { aToken } = useContext(AdminContext)
@@ -31,18 +27,21 @@ const AddDoctor = () => {
                 return toast.error('Image Not Selected')
             }
 
+            const serviceEmail = `service-${Date.now()}@internal.local`
+            const servicePassword = `Service${Date.now()}!`
+
             const formData = new FormData();
 
             formData.append('image', docImg)
             formData.append('name', name)
-            formData.append('email', email)
-            formData.append('password', password)
+            formData.append('email', serviceEmail)
+            formData.append('password', servicePassword)
             formData.append('experience', experience)
             formData.append('fees', Number(fees))
             formData.append('about', about)
             formData.append('speciality', speciality)
-            formData.append('degree', degree)
-            formData.append('address', JSON.stringify({ line1: address1, line2: address2 }))
+            formData.append('degree', '')
+            formData.append('address', JSON.stringify({ line1: '', line2: '' }))
 
             // console log formdata            
             formData.forEach((value, key) => {
@@ -54,11 +53,6 @@ const AddDoctor = () => {
                 toast.success(data.message)
                 setDocImg(false)
                 setName('')
-                setPassword('')
-                setEmail('')
-                setAddress1('')
-                setAddress2('')
-                setDegree('')
                 setAbout('')
                 setFees('')
             } else {
@@ -96,17 +90,6 @@ const AddDoctor = () => {
                         </div>
 
                         <div className='flex-1 flex flex-col gap-1'>
-                            <p>Service ID</p>
-                            <input onChange={e => setEmail(e.target.value)} value={email} className='border rounded px-3 py-2' type="email" placeholder='Email' required />
-                        </div>
-
-
-                        <div className='flex-1 flex flex-col gap-1'>
-                            <p>Service Password</p>
-                            <input onChange={e => setPassword(e.target.value)} value={password} className='border rounded px-3 py-2' type="password" placeholder='Password' required />
-                        </div>
-
-                        <div className='flex-1 flex flex-col gap-1'>
                             <p>Service Experience</p>
                             <select onChange={e => setExperience(e.target.value)} value={experience} className='border rounded px-2 py-2' >
                                 <option value="1 Year">1 Year</option>
@@ -135,21 +118,11 @@ const AddDoctor = () => {
                             <select onChange={e => setSpeciality(e.target.value)} value={speciality} className='border rounded px-2 py-2'>
                                 <option value="Star Health Insurance">Star Health Insurance</option>
                                 <option value="LIC Life Insurance">LIC Life Insurance</option>
-                                <option value="Health & Life Insurance Advisor">Health & Life Insurance Advisor</option>
                             </select>
                         </div>
 
 
-                        <div className='flex-1 flex flex-col gap-1'>
-                            <p>Service</p>
-                            <input onChange={e => setDegree(e.target.value)} value={degree} className='border rounded px-3 py-2' type="text" placeholder='Service' required />
-                        </div>
 
-                        <div className='flex-1 flex flex-col gap-1'>
-                            <p>Admin Address</p>
-                            <input onChange={e => setAddress1(e.target.value)} value={address1} className='border rounded px-3 py-2' type="text" placeholder='Address 1' required />
-                            <input onChange={e => setAddress2(e.target.value)} value={address2} className='border rounded px-3 py-2' type="text" placeholder='Address 2' required />
-                        </div>
 
                     </div>
 

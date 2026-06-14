@@ -8,9 +8,10 @@ import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Admin/Dashboard'
 import AllAppointments from './pages/Admin/AllAppointments'
-import AddDoctor from './pages/Admin/AddDoctor'
+import AddService from './pages/Admin/AddDoctor'
 import DoctorsList from './pages/Admin/DoctorsList'
 import ClientsList from './pages/Admin/ClientsList'
+import ConsultationRequests from './pages/Admin/ConsultationRequests'
 import Login from './pages/Login'
 import DoctorAppointments from './pages/Doctor/DoctorAppointments'
 import DoctorDashboard from './pages/Doctor/DoctorDashboard'
@@ -31,9 +32,10 @@ const App = () => {
           <Route path='/' element={<></>} />
           <Route path='/admin-dashboard' element={<Dashboard />} />
           <Route path='/all-appointments' element={<AllAppointments />} />
-          <Route path='/add-doctor' element={<AddDoctor />} />
+          <Route path='/add-service' element={<AddService />} />
           <Route path='/doctor-list' element={<DoctorsList />} />
           <Route path='/clients-list' element={<ClientsList />} />
+          <Route path='/consultation-requests' element={<ConsultationRequests />} />
           <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
           <Route path='/doctor-appointments' element={<DoctorAppointments />} />
           <Route path='/doctor-profile' element={<DoctorProfile />} />

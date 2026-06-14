@@ -1,19 +1,35 @@
-import jwt from 'jsonwebtoken'
+import jwtService from '../services/jwtService.js';
+import doctorModel from '../models/doctorModel.js';
 
-// doctor authentication middleware
 const authDoctor = async (req, res, next) => {
-    const { dtoken } = req.headers
-    if (!dtoken) {
-        return res.json({ success: false, message: 'Not Authorized Login Again' })
-    }
     try {
-        const token_decode = jwt.verify(dtoken, process.env.JWT_SECRET)
-        req.body.docId = token_decode.id
-        next()
+        const authHeader = req.headers.authorization;
+        const dtoken = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : req.headers.dtoken;
+
+        if (!dtoken) {
+            return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
+        }
+
+        const decoded = jwtService.verifyAccessToken(dtoken);
+        if (!decoded) {
+            return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
+        }
+
+        if (decoded.role !== 'doctor') {
+            return res.status(403).json({ success: false, message: 'Doctor access required' });
+        }
+
+        const doctor = await doctorModel.findById(decoded.userId).select('-password');
+        if (!doctor) {
+            return res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
+        }
+
+        req.user = { userId: decoded.userId, id: decoded.userId, email: doctor.email, role: 'doctor' };
+        req.body.docId = decoded.userId;
+        next();
     } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
+        res.status(401).json({ success: false, message: 'Not Authorized Login Again' });
     }
-}
+};
 
 export default authDoctor;

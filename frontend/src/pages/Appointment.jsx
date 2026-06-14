@@ -3,13 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
 import { assets } from '../assets/assets'
 import RelatedDoctors from '../components/RelatedDoctors'
-import axios from 'axios'
 import { toast } from 'react-toastify'
 
 const Appointment = () => {
 
     const { docId } = useParams()
-    const { doctors, currencySymbol, backendUrl, token, getDoctosData } = useContext(AppContext)
+    const { doctors, currencySymbol, token } = useContext(AppContext)
     const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
     const [docInfo, setDocInfo] = useState(false)
@@ -85,36 +84,16 @@ const Appointment = () => {
 
     }
 
-    const bookAppointment = async () => {
+    const bookAppointment = () => {
 
         if (!token) {
             toast.warning('Login to book appointment')
             return navigate('/login')
         }
 
-        const date = docSlots[slotIndex][0].datetime
-
-        let day = date.getDate()
-        let month = date.getMonth() + 1
-        let year = date.getFullYear()
-
-        const slotDate = day + "_" + month + "_" + year
-
-        try {
-
-            const { data } = await axios.post(backendUrl + '/api/user/book-appointment', { docId, slotDate, slotTime }, { headers: { token } })
-            if (data.success) {
-                toast.success(data.message)
-                getDoctosData()
-                navigate('/my-appointments')
-            } else {
-                toast.error(data.message)
-            }
-
-        } catch (error) {
-            console.log(error)
-            toast.error(error.message)
-        }
+        const selectedSlot = docSlots[slotIndex]?.[0]
+        const date = selectedSlot ? selectedSlot.datetime.toISOString().split('T')[0] : ''
+        navigate(`/book-call?service=${encodeURIComponent(docInfo.name)}&date=${date}&time=${encodeURIComponent(slotTime)}`)
 
     }
 
@@ -178,6 +157,16 @@ const Appointment = () => {
                 </div>
 
                 <button onClick={bookAppointment} className='bg-primary text-white text-sm font-light px-20 py-3 rounded-full my-6'>Book an appointment</button>
+                <button
+                  onClick={() => {
+                    const selectedSlot = docSlots[slotIndex]?.[0]
+                    const date = selectedSlot ? selectedSlot.datetime.toISOString().split('T')[0] : ''
+                    navigate(`/book-call?service=${encodeURIComponent(docInfo.name)}&date=${date}&time=${encodeURIComponent(slotTime)}`)
+                  }}
+                  className='ml-4 border border-primary text-primary text-sm font-light px-20 py-3 rounded-full my-6 hover:bg-primary hover:text-white transition-colors'
+                >
+                  Book Free Consultation
+                </button>
             </div>
 
             {/* Listing Releated Doctors */}

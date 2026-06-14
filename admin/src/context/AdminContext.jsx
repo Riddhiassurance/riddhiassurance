@@ -13,6 +13,7 @@ const AdminContextProvider = (props) => {
     const [doctors, setDoctors] = useState([])
     const [dashData, setDashData] = useState(false)
     const [users, setUsers] = useState([])
+    const [consultationRequests, setConsultationRequests] = useState([])
 
     const getAllDoctors = async () => {
         try {
@@ -23,7 +24,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -37,8 +38,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -52,8 +52,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -66,7 +65,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
             console.log(error)
         }
     }
@@ -81,8 +80,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
-            console.log(error)
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -96,7 +94,8 @@ const AdminContextProvider = (props) => {
             }
         } catch (error) {
             console.log(error)
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
+            setDashData({})
         }
     }
 
@@ -109,8 +108,7 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
-            console.log(error)
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -123,8 +121,68 @@ const AdminContextProvider = (props) => {
                 toast.error(data.message)
             }
         } catch (error) {
-            toast.error(error.message)
+            toast.error(error.response?.data?.message || error.message)
             console.log(error)
+        }
+    }
+
+    const setUserDisabled = async (userId, disabled) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/admin/set-user-disabled', { userId, disabled }, { headers: { aToken } })
+            data.success ? toast.success(data.message) : toast.error(data.message)
+            if (data.success) getAllUsers()
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
+        }
+    }
+
+    const setAdvisorAccess = async (userId, advisorAccess) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/admin/set-advisor-access', { userId, advisorAccess }, { headers: { aToken } })
+            data.success ? toast.success(data.message) : toast.error(data.message)
+            if (data.success) getAllUsers()
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
+        }
+    }
+
+    const getConsultationRequests = async (params = {}) => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/admin/consultation-requests', { headers: { aToken }, params })
+            if (data.success) setConsultationRequests(data.consultationRequests)
+            else toast.error(data.message)
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
+        }
+    }
+
+    const updateConsultationRequest = async (id, payload) => {
+        try {
+            const { data } = await axios.put(backendUrl + `/api/admin/consultation-requests/${id}`, payload, { headers: { aToken } })
+            data.success ? toast.success(data.message) : toast.error(data.message)
+            if (data.success) getConsultationRequests()
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
+        }
+    }
+
+    const deleteConsultationRequest = async (id) => {
+        try {
+            const { data } = await axios.delete(backendUrl + `/api/admin/consultation-requests/${id}`, { headers: { aToken } })
+            data.success ? toast.success(data.message) : toast.error(data.message)
+            if (data.success) getConsultationRequests()
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
+        }
+    }
+
+    const assignConsultationRequest = async (requestId, advisorId) => {
+        try {
+            const { data } = await axios.post(backendUrl + '/api/admin/assign-consultation-request', { requestId, advisorId }, { headers: { aToken } })
+            data.success ? toast.success(data.message) : toast.error(data.message)
+            if (data.success) getConsultationRequests()
+        } catch (error) {
+            toast.error(error.response?.data?.message || error.message)
         }
     }
 
@@ -141,7 +199,14 @@ const AdminContextProvider = (props) => {
         dashData,
         users,
         getAllUsers,
-        resetUserPassword
+        resetUserPassword,
+        setUserDisabled,
+        setAdvisorAccess,
+        consultationRequests,
+        getConsultationRequests,
+        updateConsultationRequest,
+        deleteConsultationRequest,
+        assignConsultationRequest
     }
 
     return (
@@ -152,3 +217,4 @@ const AdminContextProvider = (props) => {
 }
 
 export default AdminContextProvider
+
