@@ -19,7 +19,7 @@ const securityLogsSchema = new mongoose.Schema({
     status: { type: String, enum: ['success', 'failed'], required: true },
     reason: { type: String, default: null },
     additionalData: { type: mongoose.Schema.Types.Mixed, default: {} },
-    createdAt: { type: Date, default: Date.now, index: true, expire: 2592000 } // 30 days TTL
+    createdAt: { type: Date, default: Date.now, index: true, expires: 2592000 } // 30 days TTL
 }, { timestamps: true });
 
 const securityLogsModel = mongoose.models.security_logs || mongoose.model("security_logs", securityLogsSchema);

@@ -73,7 +73,7 @@ const loginAdmin = async (req, res) => {
                 await admin.save();
 
                 await emailService.sendOTPEmail(adminEmail, recoveryCode, 'login');
-                await logSecurityEvent(admin._id, adminEmail, 'login_locked', 'warning', 'Admin account locked after 3 failed attempts. Recovery code sent.', req);
+                await logSecurityEvent(admin._id, adminEmail, 'account_locked', 'failed', 'Admin account locked after 3 failed attempts. Recovery code sent.', req);
 
                 return res.status(429).json({
                     success: false,

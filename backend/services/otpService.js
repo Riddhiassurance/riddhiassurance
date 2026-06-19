@@ -84,7 +84,11 @@ class OTPService {
             };
         }
 
-        await otpModel.deleteOne({ _id: storedOTP._id });
+        // Mark as verified instead of deleting: registration/password-reset flows
+        // look up the verified record afterwards to read metadata. The TTL index on
+        // expiresAt auto-removes the record, and storeOTP/resetPassword clean up too.
+        storedOTP.verified = true;
+        await storedOTP.save();
 
         return { success: true, message: 'OTP verified successfully' };
     }
