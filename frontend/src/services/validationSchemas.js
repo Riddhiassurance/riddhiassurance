@@ -59,9 +59,12 @@ export const validate = async (schema, data) => {
     return { success: true, data: validated };
   } catch (error) {
     const errors = {};
-    error.errors.forEach((err) => {
-      const path = err.path[0];
-      errors[path] = err.message;
+    // Zod v4 exposes `.issues`; older versions used `.errors`. Guard for both
+    // (and any non-Zod error) so validation never throws while typing.
+    const issues = error?.issues || error?.errors || [];
+    issues.forEach((err) => {
+      const path = err.path?.[0];
+      if (path) errors[path] = err.message;
     });
     return { success: false, errors };
   }
