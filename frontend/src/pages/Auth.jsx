@@ -193,7 +193,7 @@ const Auth = () => {
             <input type="password" value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} placeholder="Password" className="w-full rounded-md border px-4 py-3" />
             <PositionAwareButton type="submit" disabled={loading} className="w-full">Login</PositionAwareButton>
             <button type="button" onClick={() => setForgotStep(1)} className="w-full text-sm font-medium text-primary">Forgot Password</button>
-            <button type="button" onClick={() => window.open('http://localhost:5174', '_blank')} className="w-full text-sm text-gray-500 hover:text-primary">Login as Admin</button>
+            <button type="button" onClick={() => window.open(import.meta.env.VITE_ADMIN_URL, '_blank')} className="w-full text-sm text-gray-500 hover:text-primary">Login as Admin</button>
             <p className="text-center text-sm text-gray-500 pt-4 border-t">Don't have an account? <button type="button" onClick={() => navigate('/create-account')} className="font-medium text-primary hover:underline">Create Account</button></p>
           </form>
         ) : (
