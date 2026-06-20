@@ -14,6 +14,7 @@ import consultationRouter from "./routes/consultationRoute.js"
 
 // app config
 const app = express()
+app.set('trust proxy', 1) // Render runs behind a proxy — rate limiter needs this
 const port = process.env.PORT || 4000
 connectDB()
 connectCloudinary()

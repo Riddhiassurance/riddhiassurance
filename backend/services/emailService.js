@@ -10,6 +10,9 @@ class EmailService {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_APP_PASSWORD
             },
+            // Force IPv4 — Render does not route IPv6, so smtp.gmail.com's
+            // AAAA record (2607:f8b0:...:465) produces ENETUNREACH.
+            family: 4,
             // Without these, a blocked SMTP port (e.g. Render's free tier blocks
             // outbound 25/465/587) makes sendMail() hang forever and the HTTP
             // request never returns. These force a fast, catchable failure.

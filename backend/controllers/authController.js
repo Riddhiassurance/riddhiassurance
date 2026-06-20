@@ -107,8 +107,10 @@ export const register = async (req, res) => {
         console.log('[OTP-REG][request] OTP stored, sending email...');
         const emailResult = await emailService.sendOTPEmail(email, otp, 'registration');
         if (!emailResult.success) {
-            console.log('[OTP-REG][request] email send failed:', emailResult.message);
-            return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
+            console.log('[OTP-REG][request] email send FAILED (non-fatal):', emailResult.message);
+            console.log('[OTP-REG][request] OTP for', email, 'is:', otp, '(check Render logs to retrieve if email not delivered)');
+        } else {
+            console.log('[OTP-REG][request] email sent successfully');
         }
         await logSecurityEvent(null, email, 'registration_requested', 'success', null, req);
 

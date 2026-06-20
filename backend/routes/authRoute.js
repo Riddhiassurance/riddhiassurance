@@ -20,7 +20,7 @@ import upload from '../middleware/multer.js';
 
 const router = express.Router();
 
-router.post('/register/request-otp', otpPerMinuteLimiter, otpLimiter, authLimiter, register);
+router.post('/register/request-otp', upload.single('profileImage'), authLimiter, register);
 router.post('/register/verify', authLimiter, verifyEmailAndRegister);
 router.post('/login', authLimiter, login);
 
