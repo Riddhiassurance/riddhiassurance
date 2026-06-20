@@ -100,9 +100,7 @@ const CreateAccount = () => {
         payload = form
       }
       console.log('[CreateAccount] requesting OTP via', `${apiClient.defaults.baseURL}/auth/register/request-otp`)
-      const { data } = await apiClient.post('/auth/register/request-otp', payload, {
-        headers: form.profileImage ? { 'Content-Type': 'multipart/form-data' } : {}
-      })
+      const { data } = await apiClient.post('/auth/register/request-otp', payload)
       if (data.success) {
         toast.success(data.message)
         setStep('otp')

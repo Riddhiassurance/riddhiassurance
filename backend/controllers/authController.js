@@ -64,6 +64,9 @@ const issueAuthCookies = async (res, req, user) => {
 
 export const register = async (req, res) => {
     try {
+        console.log('[OTP-REG][request] content-type=', req.headers['content-type'],
+            '| body keys=', Object.keys(req.body || {}),
+            '| hasFile=', Boolean(req.file));
         const { valid, value, errors } = validateSchema(registerValidation, req.body);
         if (!valid) return res.status(400).json({ success: false, message: 'Validation failed', errors });
 
@@ -81,8 +84,13 @@ export const register = async (req, res) => {
 
         let imageUrl = null;
         if (req.file) {
-            const imageUpload = await cloudinary.uploader.upload(req.file.path, { resource_type: 'image' });
+            console.log('[OTP-REG][request] uploading image to Cloudinary...');
+            const imageUpload = await cloudinary.uploader.upload(req.file.path, {
+                resource_type: 'image',
+                timeout: 30000
+            });
             imageUrl = imageUpload.secure_url;
+            console.log('[OTP-REG][request] Cloudinary upload complete');
         }
 
         const otp = otpService.generateOTP();
@@ -99,13 +107,18 @@ export const register = async (req, res) => {
         console.log('[OTP-REG][request] OTP stored, sending email...');
         const emailResult = await emailService.sendOTPEmail(email, otp, 'registration');
         if (!emailResult.success) {
+            console.log('[OTP-REG][request] email send failed:', emailResult.message);
             return res.status(500).json({ success: false, message: 'Failed to send OTP email. Please try again.' });
         }
         await logSecurityEvent(null, email, 'registration_requested', 'success', null, req);
 
         return res.status(200).json({ success: true, message: 'OTP sent to your email. Please verify to complete registration.', email });
     } catch (error) {
-        console.error('Registration error:', error);
+        console.error('[OTP-REG][request] UNHANDLED ERROR:', error);
+        console.error('[OTP-REG][request] error.name:', error.name);
+        console.error('[OTP-REG][request] error.message:', error.message);
+        if (error.code) console.error('[OTP-REG][request] error.code:', error.code);
+        if (error.response?.body) console.error('[OTP-REG][request] cloudinary response:', error.response.body);
         return res.status(500).json({ success: false, message: 'Registration failed' });
     }
 };

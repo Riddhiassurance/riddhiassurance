@@ -3,11 +3,19 @@ import nodemailer from 'nodemailer';
 class EmailService {
     constructor() {
         this.transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: 'smtp.gmail.com',
+            port: 465,
+            secure: true,
             auth: {
                 user: process.env.EMAIL_USER,
                 pass: process.env.EMAIL_APP_PASSWORD
-            }
+            },
+            // Without these, a blocked SMTP port (e.g. Render's free tier blocks
+            // outbound 25/465/587) makes sendMail() hang forever and the HTTP
+            // request never returns. These force a fast, catchable failure.
+            connectionTimeout: 10000, // 10s to establish TCP connection
+            greetingTimeout: 10000,   // 10s to receive SMTP greeting
+            socketTimeout: 20000      // 20s of socket inactivity
         });
     }
 
