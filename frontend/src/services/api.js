@@ -6,6 +6,11 @@ import axios from 'axios';
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const API_BASE_URL = `${BACKEND_URL}/api`;
 
+// One-time log of the resolved base URL. In the deployed build this should
+// print the Render URL; if it prints localhost or "undefined/api", the Vercel
+// env var (VITE_BACKEND_URL) is missing or misnamed and the app must be rebuilt.
+console.log('[API] base URL =', API_BASE_URL, '(VITE_BACKEND_URL =', BACKEND_URL, ')');
+
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
@@ -23,6 +28,15 @@ const apiClient = axios.create({
 export const wakeBackend = () => {
   axios.get(`${BACKEND_URL}/`, { timeout: 60000 }).catch(() => {});
 };
+
+// Request interceptor: log the exact URL being hit before every call. Makes it
+// easy to confirm from the browser console that OTP/auth requests go to the
+// production backend (not localhost).
+apiClient.interceptors.request.use((config) => {
+  const fullUrl = `${config.baseURL || ''}${config.url || ''}`;
+  console.log(`[API] ${(config.method || 'get').toUpperCase()} ${fullUrl}`);
+  return config;
+});
 
 // Response interceptor for token refresh
 apiClient.interceptors.response.use(
