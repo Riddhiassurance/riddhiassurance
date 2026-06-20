@@ -118,7 +118,9 @@ const allowedOrigins = [
     'http://localhost:5173',                 // local frontend (Vite dev)
     'http://localhost:5174',                 // local admin panel (Vite dev)
     'http://localhost:3000',                 // local frontend (alt port)
-    'https://riddhiassurance.vercel.app',    // deployed frontend (Vercel)
+    'https://riddhiassurance.vercel.app',    // deployed frontend (Vercel default domain)
+    'https://riddhiassurance.in',            // deployed frontend (custom domain, apex)
+    'https://www.riddhiassurance.in',        // deployed frontend (custom domain, www)
     process.env.FRONTEND_URL,                // optional override / extra origin
     process.env.ADMIN_PANEL_URL              // optional override / extra origin
 ].filter(Boolean);
