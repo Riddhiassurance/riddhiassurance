@@ -84,21 +84,32 @@ const CreateAccount = () => {
       return
     }
     try {
-      // OTP request should not be multipart; backend /register/request-otp should accept JSON.
-      const payload = {
-        name: form.name,
-        email: form.email,
-        phone: form.phone,
-        password: form.password,
-        confirmPassword: form.confirmPassword,
-        gender: form.gender,
-        ...(form.profession ? { profession: form.profession } : {})
+      let payload
+      if (form.profileImage) {
+        const formData = new FormData()
+        formData.append('profileImage', form.profileImage)
+        formData.append('name', form.name)
+        formData.append('email', form.email)
+        formData.append('phone', form.phone)
+        formData.append('password', form.password)
+        formData.append('confirmPassword', form.confirmPassword)
+        formData.append('gender', form.gender)
+        if (form.profession) formData.append('profession', form.profession)
+        payload = formData
+      } else {
+        payload = {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          password: form.password,
+          confirmPassword: form.confirmPassword,
+          gender: form.gender,
+          ...(form.profession ? { profession: form.profession } : {})
+        }
       }
 
       console.log('[CreateAccount] requesting OTP via', `${apiClient.defaults.baseURL}/auth/register/request-otp`)
-      const { data } = await apiClient.post('/auth/register/request-otp', payload, {
-        headers: { 'Content-Type': 'application/json' }
-      })
+      const { data } = await apiClient.post('/auth/register/request-otp', payload)
 
       if (data.success) {
         toast.success(data.message)

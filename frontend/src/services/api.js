@@ -17,10 +17,7 @@ const apiClient = axios.create({
   // Render's free tier spins the backend down when idle; the first request
   // after a cold start can take 30-60s. A generous timeout lets that request
   // succeed instead of failing early and surfacing "Unable to send OTP".
-  timeout: 60000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  timeout: 60000
 });
 
 // Fire-and-forget ping to wake the backend (Render cold start) as early as
