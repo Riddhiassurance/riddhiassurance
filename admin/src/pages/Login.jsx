@@ -135,32 +135,6 @@ const Login = () => {
           </>
         )}
 
-        {
-          state === 'Admin'
-            ? (
-              <p>
-                Service Login?{' '}
-                <span
-                  onClick={() => setState('Doctor')}
-                  className='text-primary underline cursor-pointer'
-                >
-                  Click here
-                </span>
-              </p>
-            )
-            : (
-              <p>
-                Admin Login?{' '}
-                <span
-                  onClick={() => setState('Admin')}
-                  className='text-primary underline cursor-pointer'
-                >
-                  Click here
-                </span>
-              </p>
-            )
-        }
-
       </div>
     </form>
   )
