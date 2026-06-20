@@ -2,27 +2,32 @@ import nodemailer from 'nodemailer';
 
 class EmailService {
     constructor() {
-        this.transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port: 465,
-            secure: true,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD
-            },
-            // Force IPv4 — Render does not route IPv6, so smtp.gmail.com's
-            // AAAA record (2607:f8b0:...:465) produces ENETUNREACH.
-            family: 4,
-            // Without these, a blocked SMTP port (e.g. Render's free tier blocks
-            // outbound 25/465/587) makes sendMail() hang forever and the HTTP
-            // request never returns. These force a fast, catchable failure.
-            connectionTimeout: 10000, // 10s to establish TCP connection
-            greetingTimeout: 10000,   // 10s to receive SMTP greeting
-            socketTimeout: 20000      // 20s of socket inactivity
-        });
+        this.apiKey = process.env.RESEND_API_KEY;
+        this.fromAddress = process.env.EMAIL_FROM || 'Riddhi Assurance <onboarding@resend.dev>';
+        // Fallback SMTP transporter — only created when RESEND_API_KEY is not set
+        this._transporter = null;
+        if (!this.apiKey) {
+            try {
+                this._transporter = nodemailer.createTransport({
+                    host: 'smtp.gmail.com',
+                    port: 465,
+                    secure: true,
+                    auth: {
+                        user: process.env.EMAIL_USER,
+                        pass: process.env.EMAIL_APP_PASSWORD
+                    },
+                    family: 4,
+                    connectionTimeout: 10000,
+                    greetingTimeout: 10000,
+                    socketTimeout: 20000
+                });
+                console.log('[EMAIL] Initialized SMTP fallback transport');
+            } catch (err) {
+                console.warn('[EMAIL] Failed to init SMTP transport:', err.message);
+            }
+        }
     }
 
-    // Send OTP email
     async sendOTPEmail(email, otp, purpose = 'verification') {
         const purposes = {
             registration: 'Create Your Account',
@@ -31,7 +36,7 @@ class EmailService {
         };
 
         const subject = `Your ${purposes[purpose] || 'Verification'} OTP`;
-        const htmlContent = `
+        const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Riddhi Assurance</h2>
                 <p style="color: #666; font-size: 16px;">Hello,</p>
@@ -55,25 +60,64 @@ class EmailService {
             </div>
         `;
 
+        if (this.apiKey) {
+            return await this._sendViaResend(email, subject, html);
+        }
+        return await this._sendViaFallback(email, subject, html);
+    }
+
+    async _sendViaResend(to, subject, html) {
+        console.log('[EMAIL] Sending via Resend to:', to);
         try {
-            console.log('[EMAIL] Sending OTP to:', email, 'from:', process.env.EMAIL_USER);
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: subject,
-                html: htmlContent
+            const response = await fetch('https://api.resend.com/emails', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    from: this.fromAddress,
+                    to: [to],
+                    subject,
+                    html
+                })
             });
-            console.log('[EMAIL] OTP sent successfully to:', email);
+            const body = await response.text();
+            if (!response.ok) {
+                console.error('[EMAIL] Resend API error:', response.status, body);
+                return { success: false, message: `Email service error (${response.status})` };
+            }
+            console.log('[EMAIL] Sent via Resend successfully to:', to);
             return { success: true, message: 'OTP sent successfully' };
         } catch (error) {
-            console.error('[EMAIL] Sending error:', error);
+            console.error('[EMAIL] Resend fetch error:', error);
             return { success: false, message: 'Failed to send OTP email' };
         }
     }
 
-    // Send verification email
+    async _sendViaFallback(to, subject, html) {
+        if (!this._transporter) {
+            console.log('[EMAIL] No email transport configured — set RESEND_API_KEY in Render env vars');
+            return { success: false, message: 'No email transport configured' };
+        }
+        console.log('[EMAIL] Sending via SMTP fallback to:', to, 'from:', process.env.EMAIL_USER);
+        try {
+            await this._transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to,
+                subject,
+                html
+            });
+            console.log('[EMAIL] Sent via SMTP successfully to:', to);
+            return { success: true, message: 'OTP sent successfully' };
+        } catch (error) {
+            console.error('[EMAIL] SMTP error:', error);
+            return { success: false, message: 'Failed to send OTP email' };
+        }
+    }
+
     async sendVerificationEmail(email, verificationLink) {
-        const htmlContent = `
+        const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Riddhi Assurance</h2>
                 <p style="color: #666; font-size: 16px;">
@@ -90,24 +134,14 @@ class EmailService {
                 <p style="color: #999; font-size: 12px; margin-top: 30px;">This link will expire in 24 hours.</p>
             </div>
         `;
-
-        try {
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Verify Your Email - Riddhi Assurance',
-                html: htmlContent
-            });
-            return { success: true, message: 'Verification email sent' };
-        } catch (error) {
-            console.error('[EMAIL] Sending error:', error);
-            return { success: false, message: 'Failed to send verification email' };
+        if (this.apiKey) {
+            return await this._sendViaResend(email, 'Verify Your Email - Riddhi Assurance', html);
         }
+        return await this._sendViaFallback(email, 'Verify Your Email - Riddhi Assurance', html);
     }
 
-    // Send password reset email
     async sendPasswordResetEmail(email, resetLink) {
-        const htmlContent = `
+        const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Riddhi Assurance</h2>
                 <p style="color: #666; font-size: 16px;">We received a request to reset your password.</p>
@@ -122,54 +156,41 @@ class EmailService {
                 <p style="color: #999; font-size: 12px;">This link will expire in 1 hour.</p>
             </div>
         `;
-
-        try {
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Reset Your Password - Riddhi Assurance',
-                html: htmlContent
-            });
-            return { success: true, message: 'Password reset email sent' };
-        } catch (error) {
-            console.error('[EMAIL] Sending error:', error);
-            return { success: false, message: 'Failed to send password reset email' };
+        if (this.apiKey) {
+            return await this._sendViaResend(email, 'Reset Your Password - Riddhi Assurance', html);
         }
+        return await this._sendViaFallback(email, 'Reset Your Password - Riddhi Assurance', html);
     }
 
     generateCalendarLinks(eventDetails) {
-        const { title, description, location, startDateTime, endDateTime } = eventDetails
-
-        const formatDate = (date) => new Date(date).toISOString().replace(/-|:|\.\d+/g, '')
-        const start = formatDate(startDateTime)
-        const end = formatDate(endDateTime)
+        const { title, description, location, startDateTime, endDateTime } = eventDetails;
+        const formatDate = (date) => new Date(date).toISOString().replace(/-|:|\.\d+/g, '');
+        const start = formatDate(startDateTime);
+        const end = formatDate(endDateTime);
 
         const googleLink = `https://calendar.google.com/calendar/render?action=TEMPLATE` +
             `&text=${encodeURIComponent(title)}` +
             `&dates=${start}/${end}` +
             `&details=${encodeURIComponent(description)}` +
-            `&location=${encodeURIComponent(location)}`
+            `&location=${encodeURIComponent(location)}`;
 
         const outlookLink = `https://outlook.live.com/calendar/0/deeplink/compose?` +
             `subject=${encodeURIComponent(title)}` +
             `&startdt=${new Date(startDateTime).toISOString()}` +
             `&enddt=${new Date(endDateTime).toISOString()}` +
             `&body=${encodeURIComponent(description)}` +
-            `&location=${encodeURIComponent(location)}`
+            `&location=${encodeURIComponent(location)}`;
 
-        return { googleLink, outlookLink }
+        return { googleLink, outlookLink };
     }
 
     async sendBookingNotificationEmail(toEmail, recipientName, clientDetails, calendarLinks) {
-        const { name, phone, service, preferredDate, preferredTime, gender, occupation } = clientDetails
-
-        const htmlContent = `
+        const { name, phone, service, preferredDate, preferredTime, gender, occupation } = clientDetails;
+        const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Riddhi Assurance</h2>
                 <p style="color: #666; font-size: 16px;">Hi ${recipientName},</p>
-                <p style="color: #666; font-size: 14px;">
-                    A new consultation call has been booked. Here are the details:
-                </p>
+                <p style="color: #666; font-size: 14px;">A new consultation call has been booked. Here are the details:</p>
                 <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
                     <h3 style="color: #333; margin-top: 0;">Client Details:</h3>
                     <ul style="color: #666; padding-left: 20px; line-height: 1.8;">
@@ -190,42 +211,23 @@ class EmailService {
                         Add to Outlook Calendar
                     </a>
                 </div>
-                <p style="color: #999; font-size: 12px; margin-top: 30px;">
-                    You can manage this booking from the admin panel.
-                </p>
+                <p style="color: #999; font-size: 12px; margin-top: 30px;">You can manage this booking from the admin panel.</p>
                 <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
-                <p style="color: #999; font-size: 12px;">
-                    Best regards,<br/>
-                    <strong>Riddhi Assurance Team</strong>
-                </p>
+                <p style="color: #999; font-size: 12px;">Best regards,<br/><strong>Riddhi Assurance Team</strong></p>
             </div>
-        `
-
-        try {
-            console.log('[EMAIL] Sending booking notification to:', toEmail);
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: toEmail,
-                subject: `New Consultation Call Booked - ${name}`,
-                html: htmlContent
-            });
-            console.log('[EMAIL] Booking notification sent successfully to:', toEmail);
-            return { success: true, message: 'Booking notification email sent' };
-        } catch (error) {
-            console.error('[EMAIL] Booking notification error:', error);
-            return { success: false, message: 'Failed to send booking notification email' };
+        `;
+        if (this.apiKey) {
+            return await this._sendViaResend(toEmail, `New Consultation Call Booked - ${name}`, html);
         }
+        return await this._sendViaFallback(toEmail, `New Consultation Call Booked - ${name}`, html);
     }
 
-    // Send consultation confirmation email
     async sendConsultationConfirmationEmail(email, name, consultationDetails) {
-        const htmlContent = `
+        const html = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #333;">Riddhi Assurance</h2>
                 <p style="color: #666; font-size: 16px;">Thank you, ${name}!</p>
-                <p style="color: #666; font-size: 14px;">
-                    We have received your consultation request. Our team will contact you shortly.
-                </p>
+                <p style="color: #666; font-size: 14px;">We have received your consultation request. Our team will contact you shortly.</p>
                 <div style="background-color: #f8f9fa; padding: 20px; margin: 20px 0; border-radius: 5px;">
                     <h3 style="color: #333; margin-top: 0;">Consultation Details:</h3>
                     <ul style="color: #666; padding-left: 20px;">
@@ -238,19 +240,10 @@ class EmailService {
                 <p style="color: #666; font-size: 14px;">Expected Response Time: 24 hours</p>
             </div>
         `;
-
-        try {
-            await this.transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: email,
-                subject: 'Consultation Request Received - Riddhi Assurance',
-                html: htmlContent
-            });
-            return { success: true, message: 'Confirmation email sent' };
-        } catch (error) {
-            console.error('[EMAIL] Sending error:', error);
-            return { success: false, message: 'Failed to send confirmation email' };
+        if (this.apiKey) {
+            return await this._sendViaResend(email, 'Consultation Request Received - Riddhi Assurance', html);
         }
+        return await this._sendViaFallback(email, 'Consultation Request Received - Riddhi Assurance', html);
     }
 }
 
