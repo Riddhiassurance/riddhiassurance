@@ -18,7 +18,7 @@ import {
 } from '../services/validationService.js';
 import { logSecurityEvent, getClientInfo } from '../middleware/authMiddleware.js';
 import { verifyAdminPassword } from '../middleware/authAdmin.js';
-import { cookieOptions, refreshCookieOptions } from '../middleware/securityConfig.js';
+import { cookieOptions, refreshCookieOptions, clearCookieOptions } from '../middleware/securityConfig.js';
 
 const maxOtpPerDay = Number(process.env.MAX_OTP_PER_DAY || 2);
 
@@ -467,8 +467,8 @@ export const logout = async (req, res) => {
         if (refreshToken && req.user?.userId && req.user.role !== 'admin') {
             await userModel.findByIdAndUpdate(req.user.userId, { $pull: { refreshTokens: { tokenHash: hashToken(refreshToken) } } });
         }
-        res.clearCookie('accessToken');
-        res.clearCookie('refreshToken');
+        res.clearCookie('accessToken', clearCookieOptions);
+        res.clearCookie('refreshToken', clearCookieOptions);
         await logSecurityEvent(req.user?.userId, req.user?.email, 'logout', 'success', null, req);
         return res.status(200).json({ success: true, message: 'Logged out successfully' });
     } catch (error) {
@@ -481,8 +481,8 @@ export const logoutAll = async (req, res) => {
     if (req.user.role !== 'admin') {
         await userModel.findByIdAndUpdate(req.user.userId, { refreshTokens: [] });
     }
-    res.clearCookie('accessToken');
-    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken', clearCookieOptions);
+    res.clearCookie('refreshToken', clearCookieOptions);
     await logSecurityEvent(req.user.userId, req.user.email, 'logout_all', 'success', null, req);
     return res.status(200).json({ success: true, message: 'Logged out from all devices' });
 };

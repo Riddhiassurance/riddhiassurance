@@ -114,30 +114,54 @@ export const hppMiddleware = hpp({
     whitelist: ['sort', 'fields', 'limit', 'page']
 });
 
+const allowedOrigins = [
+    'http://localhost:5173',                 // local frontend (Vite dev)
+    'http://localhost:5174',                 // local admin panel (Vite dev)
+    'http://localhost:3000',                 // local frontend (alt port)
+    'https://riddhiassurance.vercel.app',    // deployed frontend (Vercel)
+    process.env.FRONTEND_URL,                // optional override / extra origin
+    process.env.ADMIN_PANEL_URL              // optional override / extra origin
+].filter(Boolean);
+
 export const corsConfig = {
-    origin: [
-        process.env.FRONTEND_URL || 'http://localhost:5173',
-        process.env.ADMIN_PANEL_URL || 'http://localhost:5174'
-    ],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (curl, server-to-server, mobile apps)
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`Not allowed by CORS: ${origin}`));
+        }
+    },
     credentials: true,
     optionsSuccessStatus: 200,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'atoken', 'rtoken', 'token']
 };
 
-export const cookieOptions = {
+const isProduction = process.env.NODE_ENV === 'production';
+
+// In production the frontend (Vercel) and backend (Render) are on different
+// sites, so cookies must be SameSite=None + Secure to be sent cross-site.
+// Locally (same-site, HTTP) use 'lax' so cookies work without HTTPS.
+const crossSiteCookie = {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'none' : 'lax'
+};
+
+export const cookieOptions = {
+    ...crossSiteCookie,
     maxAge: 15 * 60 * 1000
 };
 
 export const refreshCookieOptions = {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    ...crossSiteCookie,
     maxAge: 7 * 24 * 60 * 60 * 1000
 };
+
+// clearCookie must use the same flags (secure/sameSite/httpOnly) it was set
+// with, otherwise the browser won't match and remove the cookie.
+export const clearCookieOptions = { ...crossSiteCookie };
 
 export const sanitizeString = (str) => {
     if (typeof str !== 'string') return str;

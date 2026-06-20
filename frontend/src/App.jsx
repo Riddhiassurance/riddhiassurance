@@ -23,6 +23,7 @@ import MyDashboard from './pages/MyDashboard'
 import AdvisorDashboard from './pages/AdvisorDashboard'
 import { AppContext } from './context/AppContext'
 import { useNavigate } from 'react-router-dom'
+import { wakeBackend } from './services/api'
 
 /* eslint react/prop-types: "off" */
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -51,6 +52,12 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
 const App = () => {
   const navigate = useNavigate()
+
+  // Wake the backend on load so it is likely up by the time a user submits a
+  // form (mitigates Render free-tier cold starts).
+  useEffect(() => {
+    wakeBackend()
+  }, [])
 
   return (
     <div className='mx-4 sm:mx-[10%]'>

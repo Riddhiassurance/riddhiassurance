@@ -1,14 +1,28 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// Single source of truth for the backend base URL.
+// Set VITE_BACKEND_URL in your env files (.env for local dev, .env.production
+// for the deployed build / Vercel dashboard). The API base is derived from it.
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+const API_BASE_URL = `${BACKEND_URL}/api`;
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  // Render's free tier spins the backend down when idle; the first request
+  // after a cold start can take 30-60s. A generous timeout lets that request
+  // succeed instead of failing early and surfacing "Unable to send OTP".
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json'
   }
 });
+
+// Fire-and-forget ping to wake the backend (Render cold start) as early as
+// possible, so it is likely awake by the time the user submits a form.
+export const wakeBackend = () => {
+  axios.get(`${BACKEND_URL}/`, { timeout: 60000 }).catch(() => {});
+};
 
 // Response interceptor for token refresh
 apiClient.interceptors.response.use(
